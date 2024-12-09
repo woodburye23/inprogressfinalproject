@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle Game</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #121213;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+
+    #game {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-gap: 10px;
+      margin-top: 20px;
+    }
+
+    .tile {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #3a3a3c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .correct {
+      background-color: #538d4e;
+      border-color: #538d4e;
+      color: white;
+    }
+
+    .present {
+      background-color: #b59f3b;
+      border-color: #b59f3b;
+      color: white;
+    }
+
+    .absent {
+      background-color: #3a3a3c;
+      border-color: #3a3a3c;
+      color: white;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Wordle</h1>
+  <div id="game"></div>
+  <div id="message"></div>
+  <script>
+    const wordList = ["apple", "berry", "grape", "peach", "mango", "lemon", "cherry", "melon", "plums"]; // Word list
+    const targetWord = wordList[Math.floor(Math.random() * wordList.length)]; // Random target word
+    const maxGuesses = 6;
+
+    let currentRow = 0;
+    let currentCol = 0;
+    let gameOver = false;
+
+    const gameContainer = document.getElementById("game");
+    const messageDiv = document.getElementById("message");
+
+    // Create the game grid
+    function createGrid() {
+      for (let i = 0; i < maxGuesses * 5; i++) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.dataset.row = Math.floor(i / 5);
+        tile.dataset.col = i % 5;
+        gameContainer.appendChild(tile);
+      }
+    }
+
+    // Handle key input
+    window.addEventListener("keydown", (e) => {
+      if (gameOver) return;
+
+      const key = e.key.toLowerCase();
+
+      if (key === "enter") {
+        submitGuess();
+      } else if (key === "backspace") {
+        deleteLetter();
+      } else if (/^[a-z]$/.test(key)) {
+        addLetter(key);
+      }
+    });
+
+    // Add a letter to the grid
+    function addLetter(letter) {
+      if (currentCol < 5) {
+        const tile = document.querySelector(
+          `.tile[data-row="${currentRow}"][data-col="${currentCol}"]`
+        );
+        tile.textContent = letter;
+        currentCol++;
+      }
+    }
+
+    // Remove the last letter
+    function deleteLetter() {
+      if (currentCol > 0) {
+        currentCol--;
+        const tile = document.querySelector(
+          `.tile[data-row="${currentRow}"][data-col="${currentCol}"]`
+        );
+        tile.textContent = "";
+      }
+    }
+
+    // Submit the guess
+    function submitGuess() {
+      if (currentCol < 5) {
+        messageDiv.textContent = "Not enough letters!";
+        return;
+      }
+
+      const guess = Array.from(
+        { length: 5 },
+        (_, i) =>
+          document.querySelector(
+            `.tile[data-row="${currentRow}"][data-col="${i}"]`
+          ).textContent
+      ).join("");
+
+      checkGuess(guess);
+
+      if (guess === targetWord) {
+        messageDiv.textContent = "You guessed it! 🎉";
+        gameOver = true;
+      } else if (currentRow === maxGuesses - 1) {
+        messageDiv.textContent = `Game Over! The word was "${targetWord}".`;
+        gameOver = true;
+      } else {
+        currentRow++;
+        currentCol = 0;
+      }
+    }
+
+    // Check the guess against the target word
+    function checkGuess(guess) {
+      const letterCount = {};
+      for (const letter of targetWord) {
+        letterCount[letter] = (letterCount[letter] || 0) + 1;
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const tile = document.querySelector(
+          `.tile[data-row="${currentRow}"][data-col="${i}"]`
+        );
+        const letter = guess[i];
+
+        if (letter === targetWord[i]) {
+          tile.classList.add("correct");
+          letterCount[letter]--;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const tile = document.querySelector(
+          `.tile[data-row="${currentRow}"][data-col="${i}"]`
+        );
+        const letter = guess[i];
+
+        if (
+          letter !== targetWord[i] &&
+          targetWord.includes(letter) &&
+          letterCount[letter] > 0
+        ) {
+          tile.classList.add("present");
+          letterCount[letter]--;
+        } else if (!tile.classList.contains("correct")) {
+          tile.classList.add("absent");
+        }
+      }
+    }
+
+    createGrid();
+  </script>
+</body>
+</html>
+
